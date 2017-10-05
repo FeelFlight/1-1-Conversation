@@ -1,0 +1,10 @@
+sudo: false
+services:
+- docker
+language: bash
+script:
+- docker build -t ansi/feelflight-1-1-conversation:latest .
+- docker login -u="$DOCKER_USER" -p="$DOCKER_PASS"
+- docker push ansi/feelflight-1-1-conversation:latest
+env:
+  global:
