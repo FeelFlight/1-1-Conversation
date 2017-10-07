@@ -1,0 +1,4 @@
+watson_developer_cloud
+flask
+flask-httpauth
+couchdb
