@@ -1,5 +1,7 @@
 import os
+import json
 import couchdb
+import requests
 from   flask                  import Flask, jsonify, request, make_response
 from   flask_httpauth         import HTTPBasicAuth
 from   watson_developer_cloud import ToneAnalyzerV3, ConversationV1
@@ -36,11 +38,23 @@ def process_text():
     if r is not None and 'text' in r and 'telegramid' in r:
         text = r['text']
         uid  = str(r['telegramid'])
+        msg  = r['telegrammsg']
+        user = json.loads(requests.get('http://passenger:8030/api/v1.0/passengers/%s' % uid,
+                                       auth=('ansi', 'test')
+                                       ).content
+                          )
+        #print("USER:")
+        #print(json.dumps(user, indent=2, sort_keys= True))
 
         if uid in db:
             context = db[uid]
         else:
             context = {}
+
+        context['user'] = user
+
+        #print("CONTEXT:")
+        #print(json.dumps(context, indent=2, sort_keys= True))
 
         answer = {}
         answer['tone'] = tone_analyzer.tone(text=text)
