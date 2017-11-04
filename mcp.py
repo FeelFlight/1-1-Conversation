@@ -36,30 +36,35 @@ def unauthorized():
 def process_text():
     r = request.get_json(silent=True)
     if r is not None and 'text' in r and 'telegramid' in r:
-        text = r['text']
-        uid  = str(r['telegramid'])
-        msg  = r['telegrammsg']
-        user = json.loads(requests.get('http://passenger:8030/api/v1.0/passengers/%s' % uid,
-                                       auth=('ansi', 'test')
-                                       ).content
-                          )
-        #print("USER:")
-        #print(json.dumps(user, indent=2, sort_keys= True))
+        text    = r['text']
+        uid     = str(r['telegramid'])
+        msg     = r['telegrammsg']
+        user    = json.loads(requests.get('http://passenger:8030/api/v1.0/passengers/%s' % uid,
+                                           auth=('ansi', 'test')
+                                         ).content
+                            )
+        tone    = tone_analyzer.tone(text = text)
+        maxval  = 0.5
+        emotion = "neutral"
+
+        for tones in tone["document_tone"]["tone_categories"][0]["tones"]:
+            if tones['score'] > maxval:
+                emotion = tones['tone_id']
+                maxval  = tones['score']
 
         if uid in db:
             context = db[uid]
         else:
             context = {}
 
-        context['user'] = user
+        context['user']    = user
+        context['emotion'] = emotion
 
-        #print("CONTEXT:")
-        #print(json.dumps(context, indent=2, sort_keys= True))
+        print("CONTEXT:")
+        print(json.dumps(context, indent=2, sort_keys= True))
 
-        answer = {}
-        answer['tone'] = tone_analyzer.tone(text=text)
-        answer['chat'] = conversation.message(context=context, workspace_id=workspace_id, message_input={'text': text})
-        db[uid] = answer['chat']['context']
+        answer  = conversation.message(context=context, workspace_id=workspace_id, message_input={'text': text})
+        db[uid] = answer['context']
         return jsonify(answer)
     else:
         return make_response(jsonify({'error': 'Not a valid json'}), 401)
